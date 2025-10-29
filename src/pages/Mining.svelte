@@ -386,7 +386,6 @@
       (window as any).poolDebug = {
         // Legacy functions
         discoverPools,
-        connectStratum,
         submitShare,
         calculatePayout,
         updatePoolHashrate,
@@ -841,38 +840,8 @@
   }
 
   // ============================================================================
-  // ENHANCED POOL FEATURES - Stratum & DHT Integration
+  // ENHANCED POOL FEATURES - DHT Integration
   // ============================================================================
-
-  async function connectStratum(pool: MiningPool) {
-    if (!$etcAccount) {
-      poolError = 'Please create or import an account first.';
-      return;
-    }
-    
-    try {
-      // Parse pool URL to extract host and port
-      const urlMatch = pool.url.match(/^(?:stratum\+tcp:\/\/)?([^:]+):(\d+)$/);
-      if (!urlMatch) {
-        throw new Error('Invalid pool URL format');
-      }
-      
-      const [, host, port] = urlMatch;
-      const workerName = `${$etcAccount.address.slice(0, 10)}.worker1`;
-      
-      await invoke('connect_stratum_pool', {
-        poolUrl: host,
-        poolPort: parseInt(port),
-        workerName,
-        password: 'x'
-      });
-      
-      console.log('✅ Connected to Stratum pool:', pool.name);
-    } catch (e) {
-      console.error('❌ Stratum connection error:', e);
-      poolError = String(e);
-    }
-  }
 
   async function submitShare(nonce: number, hash: string, difficulty: number) {
     if (!$etcAccount || !currentPool) return;

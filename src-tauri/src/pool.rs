@@ -75,15 +75,6 @@ pub struct ShareSubmission {
     pub timestamp: u64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StratumConnectionInfo {
-    pub pool_url: String,
-    pub pool_port: u16,
-    pub worker_name: String,
-    pub connected: bool,
-    pub subscription_id: Option<String>,
-}
-
 // Global state for the proof of concept + real pool management
 lazy_static::lazy_static! {
     static ref AVAILABLE_POOLS: Arc<Mutex<Vec<MiningPool>>> = Arc::new(Mutex::new(create_mock_pools()));
@@ -91,7 +82,6 @@ lazy_static::lazy_static! {
     static ref USER_CREATED_POOLS: Arc<Mutex<Vec<MiningPool>>> = Arc::new(Mutex::new(Vec::new()));
     static ref POOL_MINERS: Arc<RwLock<HashMap<String, Vec<PoolMiner>>>> = Arc::new(RwLock::new(HashMap::new()));
     static ref SHARE_HISTORY: Arc<RwLock<Vec<ShareSubmission>>> = Arc::new(RwLock::new(Vec::new()));
-    static ref STRATUM_CONNECTION: Arc<Mutex<Option<StratumConnectionInfo>>> = Arc::new(Mutex::new(None));
 }
 
 fn create_mock_pools() -> Vec<MiningPool> {
@@ -411,53 +401,8 @@ pub async fn update_pool_discovery() -> Result<(), String> {
 }
 
 // ============================================================================
-// ENHANCED POOL FEATURES - Stratum Protocol & DHT Integration
+// ENHANCED POOL FEATURES - DHT Integration
 // ============================================================================
-
-/// Connect to a pool using Stratum protocol
-#[command]
-pub async fn connect_stratum_pool(
-    pool_url: String,
-    pool_port: u16,
-    worker_name: String,
-    password: String,
-) -> Result<(), String> {
-    info!(
-        "Connecting to Stratum pool: {}:{} as worker: {}",
-        pool_url, pool_port, worker_name
-    );
-
-    // In a full implementation, this would create a TCP connection
-    // and handle the Stratum protocol handshake
-    
-    // Simulate connection delay
-    tokio::time::sleep(tokio::time::Duration::from_millis(1000)).await;
-
-    let connection_info = StratumConnectionInfo {
-        pool_url: pool_url.clone(),
-        pool_port,
-        worker_name: worker_name.clone(),
-        connected: true,
-        subscription_id: Some(format!("sub_{}", get_current_timestamp())),
-    };
-
-    let mut stratum_conn = STRATUM_CONNECTION.lock().await;
-    *stratum_conn = Some(connection_info);
-
-    info!("Successfully connected to Stratum pool: {}", pool_url);
-    Ok(())
-}
-
-/// Disconnect from Stratum pool
-#[command]
-pub async fn disconnect_stratum_pool() -> Result<(), String> {
-    info!("Disconnecting from Stratum pool");
-
-    let mut stratum_conn = STRATUM_CONNECTION.lock().await;
-    *stratum_conn = None;
-
-    Ok(())
-}
 
 /// Submit a mining share to the pool
 #[command]
@@ -722,13 +667,6 @@ pub async fn query_dht_for_pools(region_filter: Option<String>) -> Result<Vec<Mi
 
     info!("Found {} pools via DHT", all_pools.len());
     Ok(all_pools)
-}
-
-/// Get Stratum connection status
-#[command]
-pub async fn get_stratum_status() -> Result<Option<StratumConnectionInfo>, String> {
-    let stratum_conn = STRATUM_CONNECTION.lock().await;
-    Ok(stratum_conn.clone())
 }
 
 /// Refresh pool information from DHT
